@@ -24,6 +24,7 @@ export interface Seance {
   id: number;
   titre: string;
   description?: string | null;
+  categorie?: string | null;
   dateDebut: string;
   dateFin: string;
   capaciteMax: number;

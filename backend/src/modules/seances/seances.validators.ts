@@ -1,9 +1,16 @@
 import { z } from 'zod';
 
+export const CATEGORIES = [
+  'Musculation', 'Cardio', 'Yoga', 'Pilates', 'Boxe',
+  'Natation', 'Cyclisme', 'Football', 'Basketball', 'Running',
+  'CrossFit', 'Arts martiaux', 'Stretching', 'Autre',
+] as const;
+
 export const createSeanceSchema = z
   .object({
     titre: z.string().min(2).max(150),
     description: z.string().max(2000).optional(),
+    categorie: z.string().max(50).optional(),
     dateDebut: z.coerce.date(),
     dateFin: z.coerce.date(),
     capaciteMax: z.coerce.number().int().positive().max(500),
@@ -19,6 +26,7 @@ export const updateSeanceSchema = z
   .object({
     titre: z.string().min(2).max(150).optional(),
     description: z.string().max(2000).optional(),
+    categorie: z.string().max(50).optional(),
     dateDebut: z.coerce.date().optional(),
     dateFin: z.coerce.date().optional(),
     capaciteMax: z.coerce.number().int().positive().max(500).optional(),
@@ -36,6 +44,7 @@ export const listSeancesQuerySchema = z.object({
   q: z.string().optional(),
   coachId: z.coerce.number().int().positive().optional(),
   lieu: z.string().optional(),
+  categorie: z.string().optional(),
   dateFrom: z.coerce.date().optional(),
   dateTo: z.coerce.date().optional(),
   page: z.coerce.number().int().positive().default(1),

@@ -68,6 +68,7 @@ model Seance {
   id           Int           @id @default(autoincrement())
   titre        String        @db.VarChar(150)
   description  String?       @db.Text
+  categorie    String?       @db.VarChar(50)
   dateDebut    DateTime      @map("date_debut")
   dateFin      DateTime      @map("date_fin")
   capaciteMax  Int           @map("capacite_max")

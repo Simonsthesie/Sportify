@@ -4,6 +4,7 @@ import type { Seance, Reservation } from '../types';
 export interface SeanceInput {
   titre: string;
   description?: string;
+  categorie?: string;
   dateDebut: string;
   dateFin: string;
   capaciteMax: number;

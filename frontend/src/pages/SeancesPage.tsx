@@ -10,12 +10,14 @@ interface Filters { q: string; lieu: string; dateFrom: string; dateTo: string; }
 const emptyFilters: Filters = { q: '', lieu: '', dateFrom: '', dateTo: '' };
 
 const sportEmoji: Record<string, string> = {
-  yoga: '🧘', musculation: '🏋️', cardio: '🏃', boxe: '🥊', natation: '🏊',
-  football: '⚽', basketball: '🏀', cycling: '🚴', pilates: '🤸', fitness: '💪',
+  musculation: '🏋️', cardio: '🏃', yoga: '🧘', pilates: '🤸',
+  boxe: '🥊', natation: '🏊', cyclisme: '🚴', football: '⚽',
+  basketball: '🏀', running: '👟', crossfit: '💪', 'arts martiaux': '🥋',
+  stretching: '🙆', autre: '🏅',
 };
-function getEmoji(specialite: string): string {
-  const s = specialite.toLowerCase();
-  return Object.entries(sportEmoji).find(([k]) => s.includes(k))?.[1] ?? '🏅';
+function getEmoji(seance: Seance): string {
+  const source = (seance.categorie || seance.coach.specialite).toLowerCase();
+  return Object.entries(sportEmoji).find(([k]) => source.includes(k))?.[1] ?? '🏅';
 }
 
 const placesColor = (restantes: number, max: number) => {
@@ -172,7 +174,7 @@ export default function SeancesPage() {
               const past = new Date(s.dateDebut).getTime() < Date.now();
               const full = s.placesRestantes <= 0;
               const inWaiting = waitingIds.has(s.id);
-              const emoji = getEmoji(s.coach.specialite);
+                    const emoji = getEmoji(s);
               return (
                 <div
                   key={s.id}
@@ -185,7 +187,7 @@ export default function SeancesPage() {
                       <div className="sport-icon text-xl">{emoji}</div>
                       <div>
                         <h2 className="font-bold text-slate-900 dark:text-white leading-tight">{s.titre}</h2>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{s.coach.specialite}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{s.categorie || s.coach.specialite}</p>
                       </div>
                     </div>
                     <span className={placesColor(s.placesRestantes, s.capaciteMax)}>

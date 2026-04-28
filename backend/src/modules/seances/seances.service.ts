@@ -24,6 +24,7 @@ function format(seance: any) {
     id: seance.id,
     titre: seance.titre,
     description: seance.description,
+    categorie: seance.categorie ?? null,
     dateDebut: seance.dateDebut,
     dateFin: seance.dateFin,
     capaciteMax: seance.capaciteMax,
@@ -60,17 +61,19 @@ async function resolveCoachIdForCurrentUser(user: JwtPayload, requested?: number
 
 export const seancesService = {
   async list(query: ListSeancesQuery = { page: 1, limit: 20 }) {
-    const { q, coachId, lieu, dateFrom, dateTo, page, limit } = query;
+    const { q, coachId, lieu, categorie, dateFrom, dateTo, page, limit } = query;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
     if (coachId) where.coachId = coachId;
     if (lieu) where.lieu = { contains: lieu };
+    if (categorie) where.categorie = { contains: categorie };
     if (q) {
       where.OR = [
         { titre: { contains: q } },
         { description: { contains: q } },
         { lieu: { contains: q } },
+        { categorie: { contains: q } },
       ];
     }
     if (dateFrom || dateTo) {
@@ -81,24 +84,13 @@ export const seancesService = {
     }
 
     const [seances, total] = await Promise.all([
-      prisma.seance.findMany({
-        where,
-        orderBy: { dateDebut: 'asc' },
-        skip,
-        take: limit,
-        include: seanceInclude,
-      }),
+      prisma.seance.findMany({ where, orderBy: { dateDebut: 'asc' }, skip, take: limit, include: seanceInclude }),
       prisma.seance.count({ where }),
     ]);
 
     return {
       data: seances.map(format),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   },
 
@@ -121,11 +113,11 @@ export const seancesService = {
 
   async create(user: JwtPayload, input: CreateSeanceInput) {
     const coachId = await resolveCoachIdForCurrentUser(user, input.coachId);
-
     const seance = await prisma.seance.create({
       data: {
         titre: input.titre,
         description: input.description,
+        categorie: input.categorie,
         dateDebut: input.dateDebut,
         dateFin: input.dateFin,
         capaciteMax: input.capaciteMax,
@@ -138,12 +130,8 @@ export const seancesService = {
   },
 
   async update(user: JwtPayload, id: number, input: UpdateSeanceInput) {
-    const seance = await prisma.seance.findUnique({
-      where: { id },
-      include: { coach: true },
-    });
+    const seance = await prisma.seance.findUnique({ where: { id }, include: { coach: true } });
     if (!seance) throw NotFound('Seance introuvable');
-
     if (user.role === 'COACH' && seance.coach.utilisateurId !== user.sub) {
       throw Forbidden('Vous n etes pas le coach de cette seance');
     }
@@ -154,49 +142,34 @@ export const seancesService = {
         where: { seanceId: id, statut: StatutReservation.CONFIRMEE },
       });
       if (input.capaciteMax < confirmees) {
-        throw BadRequest('La nouvelle capacite (' + input.capaciteMax + ') est inferieure au nombre de reservations deja confirmees (' + confirmees + ').');
+        throw BadRequest('La nouvelle capacite (' + input.capaciteMax + ') est inferieure au nombre de reservations confirmees (' + confirmees + ').');
       }
     }
 
-    const updated = await prisma.seance.update({
-      where: { id },
-      data: input,
-      include: seanceInclude,
-    });
+    const updated = await prisma.seance.update({ where: { id }, data: input, include: seanceInclude });
     return format(updated);
   },
 
   async remove(user: JwtPayload, id: number) {
-    const seance = await prisma.seance.findUnique({
-      where: { id },
-      include: { coach: true },
-    });
+    const seance = await prisma.seance.findUnique({ where: { id }, include: { coach: true } });
     if (!seance) throw NotFound('Seance introuvable');
-
     if (user.role === 'COACH' && seance.coach.utilisateurId !== user.sub) {
       throw Forbidden('Vous n etes pas le coach de cette seance');
     }
     if (user.role === 'CLIENT') throw Forbidden();
-
     await prisma.seance.delete({ where: { id } });
   },
 
   async listParticipants(user: JwtPayload, id: number) {
-    const seance = await prisma.seance.findUnique({
-      where: { id },
-      include: { coach: true },
-    });
+    const seance = await prisma.seance.findUnique({ where: { id }, include: { coach: true } });
     if (!seance) throw NotFound('Seance introuvable');
     if (user.role === 'COACH' && seance.coach.utilisateurId !== user.sub) {
       throw Forbidden('Vous n etes pas le coach de cette seance');
     }
     if (user.role === 'CLIENT') throw Forbidden();
-
     return prisma.reservation.findMany({
       where: { seanceId: id, statut: StatutReservation.CONFIRMEE },
-      include: {
-        client: { select: { id: true, nom: true, prenom: true, email: true } },
-      },
+      include: { client: { select: { id: true, nom: true, prenom: true, email: true } } },
       orderBy: { creeLe: 'asc' },
     });
   },
