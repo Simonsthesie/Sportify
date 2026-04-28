@@ -39,7 +39,7 @@ export const listSeancesQuerySchema = z.object({
   dateFrom: z.coerce.date().optional(),
   dateTo: z.coerce.date().optional(),
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
+  limit: z.coerce.number().int().positive().max(200).default(20),
 });
 
 export type ListSeancesQuery = z.infer<typeof listSeancesQuerySchema>;
