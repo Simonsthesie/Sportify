@@ -25,6 +25,7 @@ export default function SeancesPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [waitingIds, setWaitingIds] = useState<Set<number>>(new Set());
 
   const load = async (f = filters, p = page) => {
     setLoading(true);
@@ -59,6 +60,13 @@ export default function SeancesPage() {
     load(emptyFilters, 1);
   };
 
+  const removeFilter = (key: keyof Filters) => {
+    const updated = { ...filters, [key]: '' };
+    setFilters(updated);
+    setPage(1);
+    load(updated, 1);
+  };
+
   const onPageChange = (p: number) => {
     setPage(p);
     load(filters, p);
@@ -79,18 +87,35 @@ export default function SeancesPage() {
     }
   };
 
+  const onJoinWaiting = async (id: number) => {
+    setBusyId(id);
+    setError(null);
+    setInfo(null);
+    try {
+      await reservationsApi.joinWaitingList(id);
+      setWaitingIds((prev) => new Set([...prev, id]));
+      setInfo("Vous avez rejoint la liste d'attente !");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const activeFilters = Object.entries(filters).filter(([, v]) => v !== '');
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Seances disponibles</h1>
-        <p className="text-sm text-slate-500">Recherchez et reservez votre prochaine seance.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Seances disponibles</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Recherchez et reservez votre prochaine seance.</p>
       </div>
 
       {/* Barre de filtres */}
       <form onSubmit={onSearch} className="card grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label className="label">Recherche</label>
-          <input className="input" placeholder="Titre, lieu..." value={filters.q}
+          <input className="input" placeholder="Titre, description..." value={filters.q}
             onChange={(e) => setFilters({ ...filters, q: e.target.value })} />
         </div>
         <div>
@@ -108,14 +133,36 @@ export default function SeancesPage() {
           <input className="input" type="date" value={filters.dateTo}
             onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })} />
         </div>
-        <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
+        <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
           <button type="submit" className="btn-primary">Rechercher</button>
-          <button type="button" className="btn-secondary" onClick={onReset}>Reinitialiser</button>
-          <span className="ml-auto text-sm text-slate-500 self-center">
+          {activeFilters.length > 0 && (
+            <button type="button" className="btn-secondary" onClick={onReset}>Reinitialiser</button>
+          )}
+          <span className="ml-auto self-center text-sm text-slate-500 dark:text-slate-400">
             {pagination.total} seance{pagination.total > 1 ? 's' : ''} trouvee{pagination.total > 1 ? 's' : ''}
           </span>
         </div>
       </form>
+
+      {/* Chips de filtres actifs */}
+      {activeFilters.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {activeFilters.map(([key, value]) => (
+            <span
+              key={key}
+              className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-700 dark:bg-brand-700/20 dark:text-brand-400"
+            >
+              {key === 'q' ? `"${value}"` : key === 'lieu' ? `Lieu: ${value}` : key === 'dateFrom' ? `Du: ${value}` : `Au: ${value}`}
+              <button
+                onClick={() => removeFilter(key as keyof Filters)}
+                className="ml-1 rounded-full hover:bg-brand-200 dark:hover:bg-brand-600/30"
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
 
       {error && <Alert type="error">{error}</Alert>}
       {info && <Alert type="success">{info}</Alert>}
@@ -123,36 +170,60 @@ export default function SeancesPage() {
       {loading ? (
         <p className="text-sm text-slate-500">Chargement...</p>
       ) : seances.length === 0 ? (
-        <p className="text-sm text-slate-500">Aucune seance ne correspond aux criteres.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Aucune seance ne correspond aux criteres.</p>
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {seances.map((s) => {
               const past = new Date(s.dateDebut).getTime() < Date.now();
               const full = s.placesRestantes <= 0;
+              const inWaiting = waitingIds.has(s.id);
               return (
                 <div key={s.id} className="card flex flex-col">
                   <div className="mb-2 flex items-start justify-between gap-2">
-                    <h2 className="text-lg font-semibold text-slate-900">{s.titre}</h2>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{s.titre}</h2>
                     <span className={'badge ' + (full ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700')}>
                       {s.placesRestantes}/{s.capaciteMax}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-500">
-                    {s.coach.utilisateur.prenom} {s.coach.utilisateur.nom} - {s.coach.specialite}
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {s.coach.utilisateur.prenom} {s.coach.utilisateur.nom} · {s.coach.specialite}
                   </p>
-                  <p className="mt-2 text-sm text-slate-700">
-                    {formatDateTime(s.dateDebut)} - {formatDateTime(s.dateFin)}
+                  <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+                    {formatDateTime(s.dateDebut)} → {formatDateTime(s.dateFin)}
                   </p>
-                  {s.lieu && <p className="text-sm text-slate-500">Lieu: {s.lieu}</p>}
-                  {s.description && <p className="mt-2 text-sm text-slate-600">{s.description}</p>}
+                  {s.lieu && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      <span className="mr-1">📍</span>{s.lieu}
+                    </p>
+                  )}
+                  {s.description && <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{s.description}</p>}
+
                   {user?.role === 'CLIENT' && (
                     <div className="mt-auto pt-4">
-                      <button className="btn-primary w-full"
-                        onClick={() => onReserver(s.id)}
-                        disabled={past || full || busyId === s.id}>
-                        {past ? 'Terminee' : full ? 'Complete' : busyId === s.id ? 'Reservation...' : 'Reserver'}
-                      </button>
+                      {past ? (
+                        <button className="btn-secondary w-full" disabled>Terminee</button>
+                      ) : full ? (
+                        inWaiting ? (
+                          <button className="btn-secondary w-full" disabled>En liste d'attente</button>
+                        ) : (
+                          <button
+                            className="btn w-full border border-orange-400 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400"
+                            onClick={() => onJoinWaiting(s.id)}
+                            disabled={busyId === s.id}
+                          >
+                            {busyId === s.id ? 'En cours...' : "Liste d'attente"}
+                          </button>
+                        )
+                      ) : (
+                        <button
+                          className="btn-primary w-full"
+                          onClick={() => onReserver(s.id)}
+                          disabled={busyId === s.id}
+                        >
+                          {busyId === s.id ? 'Reservation...' : 'Reserver'}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -160,17 +231,16 @@ export default function SeancesPage() {
             })}
           </div>
 
-          {/* Pagination */}
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-center gap-2">
               <button className="btn-secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
-                Precedent
+                &laquo; Precedent
               </button>
-              <span className="text-sm text-slate-600">
+              <span className="text-sm text-slate-600 dark:text-slate-400">
                 Page {pagination.page} / {pagination.totalPages}
               </span>
               <button className="btn-secondary" disabled={page >= pagination.totalPages} onClick={() => onPageChange(page + 1)}>
-                Suivant
+                Suivant &raquo;
               </button>
             </div>
           )}

@@ -1,6 +1,7 @@
 import { prisma } from '../../config/prisma';
-import { NotFound, BadRequest } from '../../utils/errors';
+import { NotFound, BadRequest, Unauthorized } from '../../utils/errors';
 import { RoleLibelle } from '@prisma/client';
+import { hashPassword, comparePassword } from '../../utils/password';
 
 const safeUserSelect = {
   id: true,
@@ -21,12 +22,33 @@ export const usersService = {
   },
 
   async getById(id: number) {
-    const user = await prisma.utilisateur.findUnique({
-      where: { id },
-      select: safeUserSelect,
-    });
+    const user = await prisma.utilisateur.findUnique({ where: { id }, select: safeUserSelect });
     if (!user) throw NotFound('Utilisateur introuvable');
     return user;
+  },
+
+  async getMe(id: number) {
+    const user = await prisma.utilisateur.findUnique({ where: { id }, select: safeUserSelect });
+    if (!user) throw NotFound('Utilisateur introuvable');
+    return user;
+  },
+
+  async updateProfile(id: number, data: { nom?: string; prenom?: string }) {
+    const user = await prisma.utilisateur.findUnique({ where: { id } });
+    if (!user) throw NotFound('Utilisateur introuvable');
+    return prisma.utilisateur.update({ where: { id }, data, select: safeUserSelect });
+  },
+
+  async updatePassword(id: number, currentPassword: string, newPassword: string) {
+    const user = await prisma.utilisateur.findUnique({ where: { id } });
+    if (!user) throw NotFound('Utilisateur introuvable');
+
+    const valid = await comparePassword(currentPassword, user.motDePasse);
+    if (!valid) throw Unauthorized('Mot de passe actuel incorrect');
+
+    const hashed = await hashPassword(newPassword);
+    await prisma.utilisateur.update({ where: { id }, data: { motDePasse: hashed } });
+    return { success: true };
   },
 
   async updateRole(id: number, libelle: RoleLibelle) {
@@ -36,17 +58,11 @@ export const usersService = {
     if (libelle === 'COACH') {
       const existingCoach = await prisma.coach.findUnique({ where: { utilisateurId: id } });
       if (!existingCoach) {
-        await prisma.coach.create({
-          data: { utilisateurId: id, specialite: 'A definir' },
-        });
+        await prisma.coach.create({ data: { utilisateurId: id, specialite: 'A definir' } });
       }
     }
 
-    return prisma.utilisateur.update({
-      where: { id },
-      data: { roleId: role.id },
-      select: safeUserSelect,
-    });
+    return prisma.utilisateur.update({ where: { id }, data: { roleId: role.id }, select: safeUserSelect });
   },
 
   async remove(id: number) {

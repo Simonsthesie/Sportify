@@ -41,9 +41,12 @@ model Utilisateur {
   prenom       String        @db.VarChar(100)
   roleId       Int           @map("role_id")
   role         Role          @relation(fields: [roleId], references: [id])
-  coach        Coach?
-  reservations Reservation[]
-  creeLe       DateTime      @default(now()) @map("cree_le")
+  coach         Coach?
+  reservations  Reservation[]
+  listeAttente  ListeAttente[]
+  avis          Avis[]
+  notifications Notification[]
+  creeLe        DateTime      @default(now()) @map("cree_le")
   majLe        DateTime      @updatedAt @map("maj_le")
 
   @@index([roleId])
@@ -70,9 +73,11 @@ model Seance {
   capaciteMax  Int           @map("capacite_max")
   lieu         String?       @db.VarChar(150)
   coachId      Int           @map("coach_id")
-  coach        Coach         @relation(fields: [coachId], references: [id])
+  coach        Coach          @relation(fields: [coachId], references: [id])
   reservations Reservation[]
-  creeLe       DateTime      @default(now()) @map("cree_le")
+  listeAttente ListeAttente[]
+  avis         Avis[]
+  creeLe       DateTime       @default(now()) @map("cree_le")
   majLe        DateTime      @updatedAt @map("maj_le")
 
   @@index([coachId])
@@ -95,4 +100,45 @@ model Reservation {
   @@index([seanceId])
   @@index([statut])
   @@map("reservation")
+}
+
+model ListeAttente {
+  id       Int         @id @default(autoincrement())
+  clientId Int         @map("client_id")
+  client   Utilisateur @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  seanceId Int         @map("seance_id")
+  seance   Seance      @relation(fields: [seanceId], references: [id], onDelete: Cascade)
+  position Int
+  creeLe   DateTime    @default(now()) @map("cree_le")
+
+  @@unique([clientId, seanceId], name: "uq_attente_client_seance")
+  @@index([seanceId, position])
+  @@map("liste_attente")
+}
+
+model Avis {
+  id          Int         @id @default(autoincrement())
+  clientId    Int         @map("client_id")
+  client      Utilisateur @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  seanceId    Int         @map("seance_id")
+  seance      Seance      @relation(fields: [seanceId], references: [id], onDelete: Cascade)
+  note        Int
+  commentaire String?     @db.Text
+  creeLe      DateTime    @default(now()) @map("cree_le")
+
+  @@unique([clientId, seanceId], name: "uq_avis_client_seance")
+  @@index([seanceId])
+  @@map("avis")
+}
+
+model Notification {
+  id      Int         @id @default(autoincrement())
+  userId  Int         @map("user_id")
+  user    Utilisateur @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message String      @db.VarChar(500)
+  lu      Boolean     @default(false)
+  creeLe  DateTime    @default(now()) @map("cree_le")
+
+  @@index([userId, lu])
+  @@map("notification")
 }

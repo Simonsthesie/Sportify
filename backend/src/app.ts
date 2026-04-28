@@ -10,6 +10,8 @@ import authRoutes from './modules/auth/auth.routes';
 import usersRoutes from './modules/users/users.routes';
 import seancesRoutes from './modules/seances/seances.routes';
 import reservationsRoutes from './modules/reservations/reservations.routes';
+import avisRoutes from './modules/avis/avis.routes';
+import notificationsRoutes from './modules/notifications/notifications.routes';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 
 export function createApp(): Application {
@@ -30,6 +32,8 @@ export function createApp(): Application {
   app.use('/api/users', usersRoutes);
   app.use('/api/seances', seancesRoutes);
   app.use('/api/reservations', reservationsRoutes);
+  app.use('/api/avis', avisRoutes);
+  app.use('/api/notifications', notificationsRoutes);
 
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.get('/api/docs.json', (_req: Request, res: Response) => {

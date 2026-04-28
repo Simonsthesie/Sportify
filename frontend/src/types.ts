@@ -42,3 +42,28 @@ export interface Reservation {
   seance: Seance;
   client?: { id: number; nom: string; prenom: string; email: string };
 }
+
+export interface ListeAttente {
+  id: number;
+  seanceId: number;
+  position: number;
+  seance?: Seance;
+}
+
+export interface Avis {
+  id: number;
+  clientId: number;
+  seanceId: number;
+  note: number;
+  commentaire?: string | null;
+  creeLe: string;
+  client?: { id: number; nom: string; prenom: string };
+  seance?: Seance;
+}
+
+export interface Notification {
+  id: number;
+  message: string;
+  lu: boolean;
+  creeLe: string;
+}

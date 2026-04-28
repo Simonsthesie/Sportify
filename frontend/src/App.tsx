@@ -7,10 +7,12 @@ import SeancesPage from './pages/SeancesPage';
 import MesReservationsPage from './pages/MesReservationsPage';
 import CoachPage from './pages/CoachPage';
 import AdminPage from './pages/AdminPage';
+import CalendarPage from './pages/CalendarPage';
+import ProfilPage from './pages/ProfilPage';
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <Navbar />
       <main className="mx-auto max-w-6xl px-4 py-6">
         <Routes>
@@ -26,10 +28,26 @@ export default function App() {
             }
           />
           <Route
+            path="/calendrier"
+            element={
+              <ProtectedRoute>
+                <CalendarPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/mes-reservations"
             element={
               <ProtectedRoute roles={['CLIENT', 'ADMIN']}>
                 <MesReservationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profil"
+            element={
+              <ProtectedRoute>
+                <ProfilPage />
               </ProtectedRoute>
             }
           />
