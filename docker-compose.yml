@@ -1,7 +1,4 @@
 services:
-  # ==========================================
-  # Base de donnees MySQL
-  # ==========================================
   mysql:
     image: mysql:8.0
     container_name: sportify_mysql
@@ -24,9 +21,6 @@ services:
       retries: 15
       start_period: 30s
 
-  # ==========================================
-  # phpMyAdmin (interface web pour MySQL)
-  # ==========================================
   phpmyadmin:
     image: phpmyadmin:5-apache
     container_name: sportify_phpmyadmin
@@ -45,10 +39,6 @@ services:
     networks:
       - sportify_network
 
-  # ==========================================
-  # Backend API (Node.js / Express / TS)
-  # Migrations Prisma + seed au demarrage
-  # ==========================================
   backend:
     build:
       context: ./backend
@@ -56,7 +46,7 @@ services:
     container_name: sportify_backend
     restart: unless-stopped
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: ${NODE_ENV:-development}
       PORT: ${BACKEND_PORT:-4000}
       DATABASE_URL: "mysql://${MYSQL_USER:-sportify}:${MYSQL_PASSWORD:-sportify}@mysql:3306/${MYSQL_DATABASE:-sportify}"
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
@@ -69,16 +59,7 @@ services:
         condition: service_healthy
     networks:
       - sportify_network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
 
-  # ==========================================
-  # Frontend (React + Vite -> Nginx)
-  # ==========================================
   frontend:
     build:
       context: ./frontend
@@ -90,8 +71,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-5173}:80"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - sportify_network
 
