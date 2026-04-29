@@ -217,7 +217,7 @@ Toutes les routes sont préfixées par `/api`. Documentation interactive : http:
 
 ## Tests
 
-Tests unitaires et d'intégration Jest sur le backend (utilitaires JWT/password, middleware d'auth, validators Zod, routes d'intégration).
+Tests unitaires et d'intégration Jest sur le backend (utilitaires JWT/password, middleware d'auth, validators Zod, routes d'intégration auth/séances/notifications).
 
 ```bash
 cd backend
@@ -225,8 +225,8 @@ npm test
 ```
 
 ```
-Test Suites: 7 passed, 7 total
-Tests:       15 passed, 15 total
+Test Suites: 10 passed, 10 total
+Tests:       50 passed, 50 total
 ```
 
 ## Structure du projet
@@ -331,7 +331,7 @@ sportify/
 | Script SQL                  | `db/init/01_schema.sql`, `02_seed.sql`     |
 | Schéma Prisma               | `backend/prisma/schema.prisma`             |
 | Documentation API           | Swagger sur `/api/docs`                    |
-| Tests unitaires             | `backend/tests/` (7 suites, 15 tests)      |
+| Tests unitaires             | `backend/tests/` (10 suites, 50 tests)     |
 | CI/CD                       | `.github/workflows/ci.yml`                 |
 | Dockerfile / docker-compose | `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.yml` |
 | README                      | Ce fichier                                 |
