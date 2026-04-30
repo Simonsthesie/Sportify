@@ -1,3 +1,6 @@
+/**
+ * Auth HTTP : lecture du JWT Bearer et controle des roles (RBAC sur les routes Express).
+ */
 import { Request, Response, NextFunction } from 'express';
 import { JwtPayload, verifyToken } from '../utils/jwt';
 import { Forbidden, Unauthorized } from '../utils/errors';
@@ -12,6 +15,7 @@ declare global {
 }
 
 export function authenticate(req: Request, _res: Response, next: NextFunction): void {
+  // Format attendu : "Authorization: Bearer <token>"
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return next(Unauthorized('Token manquant'));
@@ -28,6 +32,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
 type Role = JwtPayload['role'];
 
 export function authorize(...allowed: Role[]) {
+  // Apres authenticate : verifie que req.user.role est dans la liste blanche
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
       return next(Unauthorized());

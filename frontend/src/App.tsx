@@ -1,3 +1,4 @@
+/** Shell applicatif : navbar, routes publiques / proteges par role. */
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';

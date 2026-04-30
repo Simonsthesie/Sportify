@@ -1,3 +1,6 @@
+/**
+ * Middleware : parse body/query/params avec Zod et remplace par les donnees typées si OK.
+ */
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema } from 'zod';
 import { BadRequest } from '../utils/errors';

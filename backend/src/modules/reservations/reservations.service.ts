@@ -1,3 +1,8 @@
+/**
+ * Service reservations + liste d'attente : regles sujet CD (capacite, chevauchement,
+ * unicite client/seance). Les notifications sont creees pour le coach (resa / annulation)
+ * et pour le client promu depuis la liste d'attente.
+ */
 import { prisma } from '../../config/prisma';
 import { BadRequest, Conflict, Forbidden, NotFound } from '../../utils/errors';
 import { JwtPayload } from '../../utils/jwt';
@@ -46,10 +51,8 @@ export const reservationsService = {
     const existing = await prisma.reservation.findUnique({
       where: { uq_client_seance: { clientId: user.sub, seanceId } },
     });
-    if (existing) {
-      if (existing.statut === StatutReservation.CONFIRMEE) {
-        throw Conflict('Vous avez deja une reservation pour cette seance');
-      }
+    if (existing?.statut === StatutReservation.CONFIRMEE) {
+      throw Conflict('Vous avez deja une reservation pour cette seance');
     }
 
     const placesPrises = await prisma.reservation.count({
@@ -59,6 +62,7 @@ export const reservationsService = {
       throw Conflict('Seance complete - utilisez la liste d\'attente');
     }
 
+    // Chevauchement temporel : une seule reservation confirmee active sur un meme creneau
     const overlap = await prisma.reservation.findFirst({
       where: {
         clientId: user.sub,
@@ -78,6 +82,7 @@ export const reservationsService = {
     const clientNom = client ? `${client.prenom} ${client.nom}` : 'Un client';
 
     let result;
+    // Reactivation si une ligne existe deja avec statut ANNULEE (contrainte d'unicite client/seance)
     if (existing) {
       result = await prisma.reservation.update({
         where: { id: existing.id },
@@ -135,7 +140,7 @@ export const reservationsService = {
       },
     });
 
-    // Promouvoir la premiere personne de la liste d'attente
+    // Liste d'attente : premier arrive, premier servi
     const premier = await prisma.listeAttente.findFirst({
       where: { seanceId: reservation.seanceId },
       orderBy: { position: 'asc' },
@@ -182,7 +187,7 @@ export const reservationsService = {
     });
   },
 
-  // Liste d'attente
+  /** Inscription liste d'attente : autorise uniquement si seance pleine et non passee */
   async joinWaitingList(user: JwtPayload, seanceId: number) {
     const seance = await prisma.seance.findUnique({ where: { id: seanceId } });
     if (!seance) throw NotFound('Seance introuvable');

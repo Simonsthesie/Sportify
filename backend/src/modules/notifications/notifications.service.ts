@@ -1,3 +1,6 @@
+/**
+ * Notifications in-app par utilisateur (lu / non lu). Utilise aussi create() depuis autres services.
+ */
 import { prisma } from '../../config/prisma';
 import { JwtPayload } from '../../utils/jwt';
 import { NotFound, Forbidden } from '../../utils/errors';

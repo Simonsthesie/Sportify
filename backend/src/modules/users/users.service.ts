@@ -1,3 +1,6 @@
+/**
+ * CRUD utilisateurs (admin), profil / mot de passe connecte ; promotion COACH cree la ligne coach si besoin.
+ */
 import { prisma } from '../../config/prisma';
 import { NotFound, BadRequest, Unauthorized } from '../../utils/errors';
 import { RoleLibelle } from '@prisma/client';
@@ -56,6 +59,7 @@ export const usersService = {
     if (!role) throw BadRequest('Role inconnu');
 
     if (libelle === 'COACH') {
+      // Un coach doit exister en table coach : specialite par defaut si creation
       const existingCoach = await prisma.coach.findUnique({ where: { utilisateurId: id } });
       if (!existingCoach) {
         await prisma.coach.create({ data: { utilisateurId: id, specialite: 'A definir' } });

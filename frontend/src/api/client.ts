@@ -1,6 +1,8 @@
+/** Client HTTP SPA : base URL Vite, jeton JWT persisté, erreurs typées. */
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:4000/api';
 const TOKEN_KEY = 'sportify.token';
 
+/** Getter / setter JWT (localStorage) pour les appels fetch (Authorization Bearer). */
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -15,6 +17,7 @@ export interface ApiError extends Error {
   details?: unknown;
 }
 
+/** Appel JSON vers l'API ; prefixe VITE_API_URL et envoie Bearer si connecte. */
 export async function api<T = unknown>(
   path: string,
   options: RequestInit = {},

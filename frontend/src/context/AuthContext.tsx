@@ -1,3 +1,6 @@
+/**
+ * Etat global utilisateur + token : sync localStorage (user + token via client API).
+ */
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { getToken, setToken } from '../api/client';
 import { authApi } from '../api/auth';

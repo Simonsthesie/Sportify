@@ -1,3 +1,6 @@
+/**
+ * Application Express : middlewares globaux, montage des routes /api/*, Swagger, gestion d'erreurs.
+ */
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';

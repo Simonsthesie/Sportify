@@ -1,3 +1,6 @@
+/**
+ * Inscription / connexion : hash bcrypt, emission JWT (payload sub, email, role).
+ */
 import { prisma } from '../../config/prisma';
 import { signToken } from '../../utils/jwt';
 import { comparePassword, hashPassword } from '../../utils/password';

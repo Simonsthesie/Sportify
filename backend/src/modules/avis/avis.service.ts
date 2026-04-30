@@ -1,3 +1,6 @@
+/**
+ * Avis clients : uniquement si seance passee et participation confirmee (anti-fraude RG).
+ */
 import { prisma } from '../../config/prisma';
 import { BadRequest, Conflict, Forbidden, NotFound } from '../../utils/errors';
 import { JwtPayload } from '../../utils/jwt';

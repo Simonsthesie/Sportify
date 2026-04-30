@@ -1,3 +1,6 @@
+/**
+ * Seances : filtrage, pagination, rattachement coach (ADMIN fournit coachId ; COACH = profil derive).
+ */
 import { prisma } from '../../config/prisma';
 import { BadRequest, Forbidden, NotFound } from '../../utils/errors';
 import { JwtPayload } from '../../utils/jwt';
@@ -17,6 +20,7 @@ const seanceInclude = {
   },
 } as const;
 
+/** Formate une seance pour l'API (_count CONFIRMEE -> placesPrises / placesRestantes). */
 function format(seance: any) {
   if (!seance) return seance;
   const placesPrises = seance._count?.reservations ?? 0;
@@ -44,6 +48,7 @@ function format(seance: any) {
   };
 }
 
+/** Resout l'id coach Prisma selon le role (ADMIN / COACH). */
 async function resolveCoachIdForCurrentUser(user: JwtPayload, requested?: number): Promise<number> {
   if (user.role === 'ADMIN') {
     if (!requested) throw BadRequest('coachId est requis pour un admin');
@@ -141,6 +146,7 @@ export const seancesService = {
       const confirmees = await prisma.reservation.count({
         where: { seanceId: id, statut: StatutReservation.CONFIRMEE },
       });
+      // On ne permet pas une capacite inferieure aux resas deja engagees (integrite RG)
       if (input.capaciteMax < confirmees) {
         throw BadRequest('La nouvelle capacite (' + input.capaciteMax + ') est inferieure au nombre de reservations confirmees (' + confirmees + ').');
       }

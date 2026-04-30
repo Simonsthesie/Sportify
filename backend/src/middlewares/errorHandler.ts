@@ -1,3 +1,6 @@
+/**
+ * Gestion centralisee des erreurs : HttpError avec status/details, sinon 500 avec log hors test.
+ */
 import { Request, Response, NextFunction } from 'express';
 import { HttpError } from '../utils/errors';
 

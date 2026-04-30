@@ -1,3 +1,4 @@
+/** Theme clair/sombre : classe Tailwind `dark` sur <html> et persistance localStorage. */
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 type Theme = 'light' | 'dark';
